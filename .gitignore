@@ -2,3 +2,5 @@ node_modules
 auth
 *.lock
 yarn.lock
+package-lock.json
+build

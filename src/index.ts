@@ -94,7 +94,7 @@ export const initWASocket = async (): Promise<void> => {
       const isGroup = message.key.remoteJid?.endsWith("@g.us");
       const isStatus = message.key.remoteJid === "status@broadcast";
 
-      if (isGroup || isStatus) return;
+      if (isStatus) return;
 
       // @ts-ignore
       const formattedMessage: FormattedMessage | undefined =

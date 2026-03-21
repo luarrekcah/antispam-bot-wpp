@@ -6,21 +6,26 @@ export type FormattedMessage = {
   messageTimestamp: Number | Long | null;
   pushName: string | null;
   content: string | null;
+  isGroup: boolean;
+  participant?: string | null;
 };
 
 /**
  * @param message
  * @returns a message vindo do Baileys para algo mais amigável.
  */
-export const getMessage = (message: WAMessage) => {
+export const getMessage = (message: WAMessage): FormattedMessage | undefined => {
   try {
+    const isGroup = message.key.remoteJid?.endsWith("@g.us") || false;
     return {
       key: message.key,
-      messageTimestamp: message.messageTimestamp,
-      pushName: message.pushName,
+      messageTimestamp: message.messageTimestamp || null,
+      pushName: message.pushName || null,
       content:
         message.message?.conversation ||
-        message.message?.extendedTextMessage?.text,
+        message.message?.extendedTextMessage?.text || null,
+      isGroup,
+      participant: message.key.participant || null,
     };
   } catch (error) {
     logger.error(error);
