@@ -22,7 +22,6 @@ const USE_LASTEST_VERSION = true;
 
 export const initWASocket = async (): Promise<void> => {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
-
   const { version, isLatest } = await fetchLatestWaWebVersion({});
 
   if (USE_LASTEST_VERSION) {
