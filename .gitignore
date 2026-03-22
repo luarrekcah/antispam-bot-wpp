@@ -4,3 +4,4 @@ auth
 yarn.lock
 package-lock.json
 build
+database.json

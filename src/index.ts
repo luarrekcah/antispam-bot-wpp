@@ -10,6 +10,7 @@ import { Boom } from "@hapi/boom";
 import { logger } from "./utils/logger";
 import { FormattedMessage, getMessage } from "./utils/message";
 import MessageHandler from "./handlers/message";
+import CallHandler from "./handlers/call";
 
 /**
  * A conexão com o número precisa de correção, mas implementei
@@ -102,6 +103,10 @@ export const initWASocket = async (): Promise<void> => {
         MessageHandler(sock, formattedMessage);
       }
     }
+  });
+
+  sock.ev.on("call", (calls: any[]) => {
+    CallHandler(sock, calls);
   });
 
   // Salvar as credenciais de autenticação

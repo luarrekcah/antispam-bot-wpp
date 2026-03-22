@@ -5,22 +5,12 @@ import { isSpam } from "../utils/antispam";
 import { antispamQueue } from "../utils/queue";
 import { logger } from "../utils/logger";
 
+import { getGroupAdmins } from "../utils/group";
+
 const MessageHandler = async (bot: WASocket, message: FormattedMessage) => {
   const jid = message.key.remoteJid!;
   const participant = message.participant || jid;
   const content = message.content || "";
-
-  const getGroupAdmins = async (groupId: string) => {
-    try {
-      const metadata = await bot.groupMetadata(groupId);
-      return metadata.participants
-        .filter((p: any) => p.admin === 'admin' || p.admin === 'superadmin')
-        .map((p: any) => p.id);
-    } catch (e) {
-      logger.error("Error getting group metadata: " + e);
-      return [];
-    }
-  };
 
   if (content.trim() === "!antispam") {
     if (!message.isGroup) {
@@ -28,7 +18,7 @@ const MessageHandler = async (bot: WASocket, message: FormattedMessage) => {
       return;
     }
 
-    const admins = await getGroupAdmins(jid);
+    const admins = await getGroupAdmins(bot, jid);
     if (!admins.includes(participant)) {
       await bot.sendMessage(jid, { text: "Apenas administradores podem usar este comando." });
       return;
@@ -45,7 +35,7 @@ const MessageHandler = async (bot: WASocket, message: FormattedMessage) => {
   }
 
   if (message.isGroup && isAntispamActive(jid) && content) {
-    const admins = await getGroupAdmins(jid);
+    const admins = await getGroupAdmins(bot, jid);
     
     if (!admins.includes(participant)) {
       if (isSpam(participant, content)) {
