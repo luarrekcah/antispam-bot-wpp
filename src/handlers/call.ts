@@ -14,8 +14,11 @@ const CallHandler = async (bot: WASocket, calls: any[]) => {
         if (isAntispamActive(jid)) {
           const admins = await getGroupAdmins(bot, jid);
 
-          // Se não for admin, remove do grupo
+          // Se não for admin, encerra a chamada e remove do grupo
           if (!admins.includes(participant)) {
+            // Rejeitar a chamada
+            await bot.rejectCall(call.id, participant);
+
             antispamQueue.add(async () => {
               try {
                 logger.info(`Removendo ${participant} por ligar para o grupo ${jid}`);
