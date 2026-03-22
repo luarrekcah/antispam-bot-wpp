@@ -1,7 +1,7 @@
 import { WASocket } from "baileys";
 import { FormattedMessage } from "../utils/message";
 import { activateAntispam, deactivateAntispam, isAntispamActive } from "../utils/db";
-import { isSpam } from "../utils/antispam";
+import { isSpam, isStickerSpam } from "../utils/antispam";
 import { antispamQueue } from "../utils/queue";
 import { logger } from "../utils/logger";
 
@@ -34,11 +34,23 @@ const MessageHandler = async (bot: WASocket, message: FormattedMessage) => {
     return;
   }
 
-  if (message.isGroup && isAntispamActive(jid) && content) {
+  if (message.isGroup && isAntispamActive(jid)) {
     const admins = await getGroupAdmins(bot, jid);
     
     if (!admins.includes(participant)) {
-      if (isSpam(participant, content)) {
+      let shouldRemove = false;
+
+      if (message.isSticker) {
+        if (isStickerSpam(participant)) {
+          shouldRemove = true;
+          logger.info(`Sticker spam detected from ${participant} in ${jid}`);
+        }
+      } else if (content && isSpam(participant, content)) {
+        shouldRemove = true;
+        logger.info(`Spam detected from ${participant} in ${jid}`);
+      }
+
+      if (shouldRemove) {
         antispamQueue.add(async () => {
           try {
             await bot.sendMessage(jid, { delete: message.key });

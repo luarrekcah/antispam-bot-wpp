@@ -1,6 +1,7 @@
 // Cache to track user messages -> Map<participantId, UserCache>
 interface UserCache {
   messages: string[];
+  stickerCount: number;
   timestamp: number;
 }
 const userMessageCache = new Map<string, UserCache>();
@@ -20,10 +21,12 @@ export const isRepeated = (participantId: string, text: string): boolean => {
 
   // If there's no cache or the cache is older than 1 minute, create a new one
   if (!cache || (now - cache.timestamp > 60000)) {
-    userMessageCache.set(participantId, { messages: [text], timestamp: now });
+    userMessageCache.set(participantId, { messages: [text], stickerCount: 0, timestamp: now });
     return false;
   }
 
+  // Reset sticker count when a text message is sent
+  cache.stickerCount = 0;
   cache.messages.push(text);
   
   // Keep only the last 3 messages
@@ -35,6 +38,26 @@ export const isRepeated = (participantId: string, text: string): boolean => {
 
   // Check if the last 3 messages are identical
   if (cache.messages.length === 3 && cache.messages.every(m => m === text)) {
+    return true;
+  }
+
+  return false;
+};
+
+export const isStickerSpam = (participantId: string): boolean => {
+  const now = Date.now();
+  const cache = userMessageCache.get(participantId);
+
+  if (!cache || (now - cache.timestamp > 60000)) {
+    userMessageCache.set(participantId, { messages: [], stickerCount: 1, timestamp: now });
+    return false;
+  }
+
+  cache.stickerCount += 1;
+  cache.timestamp = now; // Update timestamp to keep the cache alive
+  userMessageCache.set(participantId, cache);
+
+  if (cache.stickerCount >= 4) {
     return true;
   }
 

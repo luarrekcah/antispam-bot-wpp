@@ -6,6 +6,7 @@ export type FormattedMessage = {
   messageTimestamp: Number | Long | null;
   pushName: string | null;
   content: string | null;
+  isSticker: boolean;
   isGroup: boolean;
   participant?: string | null;
 };
@@ -17,13 +18,16 @@ export type FormattedMessage = {
 export const getMessage = (message: WAMessage): FormattedMessage | undefined => {
   try {
     const isGroup = message.key.remoteJid?.endsWith("@g.us") || false;
+    const isSticker = !!message.message?.stickerMessage;
     return {
       key: message.key,
       messageTimestamp: message.messageTimestamp || null,
       pushName: message.pushName || null,
       content:
         message.message?.conversation ||
-        message.message?.extendedTextMessage?.text || null,
+        message.message?.extendedTextMessage?.text ||
+        null,
+      isSticker,
       isGroup,
       participant: message.key.participant || null,
     };
