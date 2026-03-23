@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "bin": {
+    "wppbot": "bin/wppbot.js"
+  },
   "scripts": {
     "dev": "cross-env NODE_ENV=development npx nodemon",
     "build": "rimraf ./build && tsc",
