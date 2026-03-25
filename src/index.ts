@@ -11,6 +11,7 @@ import { logger } from "./utils/logger";
 import { FormattedMessage, getMessage } from "./utils/message";
 import MessageHandler from "./handlers/message";
 import CallHandler from "./handlers/call";
+import { groupCache } from "./utils/cache";
 
 /**
  * A conexão com o número precisa de correção, mas implementei
@@ -27,8 +28,7 @@ export const initWASocket = async (): Promise<void> => {
 
   if (USE_LASTEST_VERSION) {
     logger.info(
-      `Versão atual do WaWeb: ${version.join(".")} | ${
-        isLatest ? "Versão mais recente" : "Está desatualizado"
+      `Versão atual do WaWeb: ${version.join(".")} | ${isLatest ? "Versão mais recente" : "Está desatualizado"
       }`
     );
   }
@@ -44,7 +44,9 @@ export const initWASocket = async (): Promise<void> => {
     printQRInTerminal: false,
     version: USE_LASTEST_VERSION ? version : undefined,
     defaultQueryTimeoutMs: 0,
+    cachedGroupMetadata: async (jid) => groupCache.get(jid),
   });
+
 
   // @ts-ignore
   if (CONNECTION_TYPE === "NUMBER" && !sock.authState.creds.registered) {
@@ -71,9 +73,9 @@ export const initWASocket = async (): Promise<void> => {
             (lastDisconnect.error as Boom)?.output?.statusCode !==
             DisconnectReason.loggedOut;
 
-            if (shouldReconnect) {
-              setTimeout(() => initWASocket(), 5000);  // Atraso de 5 segundos antes de reconectar
-            }
+          if (shouldReconnect) {
+            setTimeout(() => initWASocket(), 5000);  // Atraso de 5 segundos antes de reconectar
+          }
           break;
         case "open":
           logger.info("Bot Conectado");
@@ -111,6 +113,20 @@ export const initWASocket = async (): Promise<void> => {
 
   // Salvar as credenciais de autenticação
   sock.ev.on("creds.update", saveCreds);
+
+  sock.ev.on("groups.update", async ([group]) => {
+    const jid = group.id!;
+    logger.info(`Group update for ${jid}`);
+    const metadata = await sock.groupMetadata(jid);
+    groupCache.set(jid, metadata);
+  });
+
+  sock.ev.on("group-participants.update", async ({ id }) => {
+    logger.info(`Group participants update for ${id}`);
+    const metadata = await sock.groupMetadata(id);
+    groupCache.set(id, metadata);
+  });
 };
+
 
 initWASocket();

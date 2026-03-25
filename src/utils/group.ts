@@ -1,5 +1,6 @@
 import { WASocket } from "baileys";
 import { logger } from "./logger";
+import { groupCache } from "./cache";
 
 /**
  * Gets the list of admin IDs for a given group.
@@ -9,7 +10,15 @@ import { logger } from "./logger";
  */
 export const getGroupAdmins = async (bot: WASocket, groupId: string): Promise<string[]> => {
   try {
-    const metadata = await bot.groupMetadata(groupId);
+    let metadata = groupCache.get(groupId) as any;
+    if (!metadata) {
+      logger.info(`Fetching metadata for ${groupId} (Cache MISS)`);
+      metadata = await bot.groupMetadata(groupId);
+      groupCache.set(groupId, metadata);
+    } else {
+      logger.info(`Using cached metadata for ${groupId} (Cache HIT)`);
+    }
+
     return metadata.participants
       .filter((p: any) => p.admin === "admin" || p.admin === "superadmin")
       .map((p: any) => p.id);
